@@ -1,10 +1,17 @@
-// GLOBALS
 var w = 1000,h = 900;
 var padding = 2;
 var nodes = [];
 var force, node, data, maxVal;
 var brake = 0.2;
 var radius = d3.scale.sqrt().range([10, 20]);
+var historyBarSize=9;
+var imgFile;
+var historyCounter=0;
+var historyBarElement = document.getElementById("history-bar");
+var newElement = document.createElement("img");
+var histTooltip = d3.select("body").append("div").attr("id", "histTooltip");
+var clickSound = new Audio();
+clickSound.src = "assets/Button_Push.wav";
 
 var partyCentres = { 
     con: { x: w / 3, y: h / 3.3}, 
@@ -21,7 +28,7 @@ var entityCentres = {
 		individual: {x: w / 3.65, y: h / 3.3},
 	};
 
-var fill = d3.scale.ordinal().range(["#F02233", "#087FBD", "#FDBB30"]);
+var fill = d3.scale.ordinal().range(["#000000", "#ffa500", "#787878"]);
 
 var svgCentre = { 
     x: w / 3.6, y: h / 2
@@ -43,38 +50,57 @@ var comma = d3.format(",.0f");
 
 function transition(name) {
 	if (name === "all-donations") {
+		clickSound.play();
 		$("#initial-content").fadeIn(250);
 		$("#value-scale").fadeIn(1000);
 		$("#view-donor-type").fadeOut(250);
 		$("#view-source-type").fadeOut(250);
 		$("#view-party-type").fadeOut(250);
+		$("#view-amount-type").fadeOut(250);
 		return total();
 		//location.reload();
 	}
 	if (name === "group-by-party") {
+		clickSound.play();
 		$("#initial-content").fadeOut(250);
 		$("#value-scale").fadeOut(250);
 		$("#view-donor-type").fadeOut(250);
 		$("#view-source-type").fadeOut(250);
 		$("#view-party-type").fadeIn(1000);
+		$("#view-amount-type").fadeOut(250);
 		return partyGroup();
 	}
 	if (name === "group-by-donor-type") {
+		clickSound.play();
 		$("#initial-content").fadeOut(250);
 		$("#value-scale").fadeOut(250);
 		$("#view-party-type").fadeOut(250);
 		$("#view-source-type").fadeOut(250);
 		$("#view-donor-type").fadeIn(1000);
+		$("#view-amount-type").fadeOut(250);
 		return donorType();
 	}
-	if (name === "group-by-money-source")
+	if (name === "group-by-money-source") {
+		clickSound.play();
 		$("#initial-content").fadeOut(250);
 		$("#value-scale").fadeOut(250);
 		$("#view-donor-type").fadeOut(250);
 		$("#view-party-type").fadeOut(250);
 		$("#view-source-type").fadeIn(1000);
+		$("#view-amount-type").fadeOut(250);
 		return fundsType();
 	}
+	if (name === "group-by-amount") {
+		clickSound.play();
+		$("#initial-content").fadeOut(250);
+		$("#value-scale").fadeOut(250);
+		$("#view-donor-type").fadeOut(250);
+		$("#view-party-type").fadeOut(250);
+		$("#view-source-type").fadeOut(250);
+		$("#view-amount-type").fadeIn(1000);
+		return amountType();
+	}
+}
 
 function start() {
 
@@ -92,7 +118,9 @@ function start() {
 		.attr("r", 0)
 		.style("fill", function(d) { return fill(d.party); })
 		.on("mouseover", mouseover)
-		.on("mouseout", mouseout);
+		.on("mouseout", mouseout)
+	        .on("click", function(d) {window.open("https://www.google.gr/search?client=ubuntu&hs=ieJ&channel=fs&dcr=0&ei=2aCdWuT6JIWxsAG4uq_ABw&q=" + d.donor);});
+
 		// Alternative title based 'tooltips'
 		// node.append("title")
 		//	.text(function(d) { return d.donor; });
@@ -124,6 +152,21 @@ function partyGroup() {
 		.on("tick", parties)
 		.start()
 		.colourByParty();
+}
+
+function amountType() {
+	force.gravity(0)
+		.friction(0.75)
+		.charge(function(d) { return -Math.pow(d.radius, 2.0) / 3; })
+		.on("tick", amounts)
+		.start();
+}
+
+function amounts(e) {
+	node.each(moveToAmount(e.alpha));
+
+		node.attr("cx", function(d) { return d.x; })
+			.attr("cy", function(d) {return d.y; });
 }
 
 function donorType() {
@@ -204,6 +247,28 @@ function moveToParties(alpha) {
 			centreX = 1200;
 		} else {
 			centreY = partyCentres[d.party].y;
+		}
+
+		d.x += (centreX - d.x) * (brake + 0.02) * alpha * 1.1;
+		d.y += (centreY - d.y) * (brake + 0.02) * alpha * 1.1;
+	};
+}
+
+function moveToAmount(alpha) {
+	return function(d) {
+		
+		if (d.value <= 25000) { 
+			centreX = svgCentre.x ;
+			centreY = svgCentre.y + 80;
+		} else if (d.value <= 500000) { 
+			centreX = svgCentre.x + 350;
+			centreY = svgCentre.y + 80;
+		} else if (d.value <= 5000000) { 
+			centreX = svgCentre.x ;
+			centreY = svgCentre.y - 180;
+		} else{
+			centreX = svgCentre.x + 350;
+			centreY = svgCentre.y - 180;
 		}
 
 		d.x += (centreX - d.x) * (brake + 0.02) * alpha * 1.1;
@@ -307,6 +372,9 @@ function display(data) {
 	return start();
 }
 
+
+
+
 function mouseover(d, i) {
 	// tooltip popup
 	var mosie = d3.select(this);
@@ -316,13 +384,13 @@ function mouseover(d, i) {
 	var entity = d.entityLabel;
 	var offset = $("svg").offset();
 	
-
+	
 
 	// image url that want to check
-	var imageFile = "https://raw.githubusercontent.com/ioniodi/D3js-uk-political-donations/master/photos/" + donor + ".ico";
-
+	imgFile = "https://raw.githubusercontent.com/ioniodi/D3js-uk-political-donations/master/photos/" + donor + ".ico";
 	
 	
+	updateHistoryBar(d,imgFile);
 	// *******************************************
 	
 	
@@ -331,7 +399,7 @@ function mouseover(d, i) {
 	
 
 	
-	var infoBox = "<p> Source: <b>" + donor + "</b> " +  "<span><img src='" + imageFile + "' height='42' width='42' onError='this.src=\"https://github.com/favicon.ico\";'></span></p>" 	
+	var infoBox = "<p> Source: <b>" + donor + "</b> " +  "<span><img src='" + imgFile + "' height='42' width='42' onError='this.src=\"https://github.com/favicon.ico\";'></span></p>" 	
 	
 	 							+ "<p> Recipient: <b>" + party + "</b></p>"
 								+ "<p> Type of donor: <b>" + entity + "</b></p>"
@@ -344,16 +412,50 @@ function mouseover(d, i) {
     .style("top", (parseInt(d3.select(this).attr("cy") - (d.radius+150)) + offset.top) + "px")
 		.html(infoBox)
 			.style("display","block");
+	responsiveVoice.speak("The donor        " + d.donor + "       has donated an amount of  " + d.value + "   british pounds");
 	
 	
 	}
+
+
+function updateHistoryBar(d, imageFile) {
+    var newHistory = new Image(42, 50);
+    newHistory.src = imgFile;
+    newHistory.style.margin = "3px";
+    newHistory.style.border = "2px solid black";
+    newHistory.style.borderRadius = "4px";
+    newHistory.onclick = function () {//kanei search sto google to donor name
+        window.open("https://www.google.gr/search?client=ubuntu&hs=ieJ&channel=fs&dcr=0&ei=2aCdWuT6JIWxsAG4uq_ABw&q=" + d.donor);
+    };
+    newHistory.onmouseover = function (event) {
+        var pageX = event.clientX;
+        var pageY = event.clientY;
+        newHistory.style.boxShadow = "0 0 2px 1px rgba(50, 140, 186, 0.7)";
+        d3.select("#histTooltip")
+            .style("opacity", 0.9)
+            .html(d.donor)
+            .style("left", pageX-170 +"px")
+            .style("bottom", pageY +"px");
+        responsiveVoice.speak("The donor        " + d.donor + "       has donated an amount of  " + d.value + "   british pounds");
+	
+    };
+    newElement.appendChild(newHistory);
+    
+    
+    if (historyCounter >= historyBarSize) {
+        historyBarElement.removeChild(historyBarElement.childNodes[historyBarSize - 1]); //afairesh eikonas
+    } else {
+        historyCounter = historyCounter + 1;
+    }
+    historyBarElement.insertBefore(newHistory, historyBarElement.childNodes[0]); //kanei append thn nea eikona
+}
 
 function mouseout() {
 	// no more tooltips
 		var mosie = d3.select(this);
 
 		mosie.classed("active", false);
-
+		responsiveVoice.cancel()
 		d3.select(".tooltip")
 			.style("display", "none");
 		}
@@ -366,5 +468,3 @@ $(document).ready(function() {
     return d3.csv("data/7500up.csv", display);
 
 });
-
-

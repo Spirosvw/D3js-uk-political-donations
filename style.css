@@ -26,7 +26,7 @@ li {
 }
 
 /* Initial appearance on load */
-#view-party-type, #view-donor-type, #view-source-type {
+#view-party-type, #view-donor-type, #view-source-type, #view-amount-type {
     display: none;
 }
 
@@ -63,15 +63,15 @@ li {
 /*  Party view */
 #conservative, #labour, #libdem { padding: 10px; }
 #conservative {
-    background: rgba(8, 127, 189, 0.2);
+    background: rgba(255, 165, 0, 1);
     top: 110px;
 }
 #labour {
-    background: rgba(240, 34, 51, 0.2);
+    background: rgba(120, 120, 120, 1);
     top: 330px;
 }
 #libdem {
-    background: rgba(253, 187, 48, 0.2);
+    background: rgba(70, 255, 255, 1);
     top: 550px;
 }
 
@@ -102,6 +102,27 @@ li {
     right: 0
 }
 
+/* position of new text of new split by */
+#ID25K {
+    left: 120px;
+    top: 500px;
+    position: absolute;
+}
+#ID500K {
+    left: 550px;
+    top: 500px;
+    position: absolute;    
+}
+#ID5M {
+    left: 120px;
+    top: 140px;
+    position: absolute; 
+}
+#ID20M {    
+    left: 550px;
+    top: 140px;
+    position: absolute;    
+}
 /* Value scale */
 
 #value-scale {
@@ -117,6 +138,20 @@ li {
 #f { top: 648px; left: 575px; }
 
 /* End of view */
+
+div#history-bar {
+    position: fixed;
+    width: 480px;
+    height: 60px;
+    right:30px;
+    bottom: 30px;
+    margin: 0;
+    padding: 0;
+    border: 3px solid rgba(50, 10, 0, 0.7);
+    box-shadow: 0px 0px 10px rgba(20, 20, 20, 0.7);
+    background-color: #FFFFFF;
+    z-index: 3;
+}
 
 circle {
     stroke: rgba(238, 238, 238, 1);
